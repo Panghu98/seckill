@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.panghu.seckill.mapper.GoodsMapper">
+    <update id="reduceStockByVersion">
+        update sk_goods_seckill set stock_count = stock_count - 1, version= version + 1 where goods_id = #{goodsId} and stock_count > 0 and version = #{version}
+    </update>
+
+    <select id="listGoodsVo" resultType="com.panghu.seckill.vo.GoodsVo">
+        select g.*,mg.stock_count,mg.start_date,mg.end_date,mg.miaosha_price,mg.version from miaosha_goods mg left join
+        goods g on mg.id=g.id;
+    </select>
+    <select id="getGoodsVoByGoodsId" resultType="com.panghu.seckill.vo.GoodsVo">
+        select g.*, sg.stock_count, sg.start_date, sg.end_date, sg.seckill_price, sg.version  from sk_goods_seckill sg left join sk_goods g  on sg.goods_id = g.id where g.id = #{goodsId
+    </select>
+    <select id="getVersionByGoodsId" resultType="java.lang.Integer">
+        select version from sk_goods_seckill  where goods_id = #{goodsId}
+    </select>
+
+
+</mapper>

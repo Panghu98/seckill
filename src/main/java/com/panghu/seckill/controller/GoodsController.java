@@ -1,20 +1,26 @@
 package com.panghu.seckill.controller;
 
 import com.panghu.seckill.bean.User;
+import com.panghu.seckill.redis.GoodsKey;
 import com.panghu.seckill.redis.RedisService;
+import com.panghu.seckill.service.GoodsService;
 import com.panghu.seckill.service.UserService;
-import com.sun.deploy.net.HttpResponse;
-import io.netty.util.internal.StringUtil;
+import com.panghu.seckill.vo.GoodsVo;
+import javafx.application.Application;
+import org.apache.catalina.core.ApplicationContext;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
+import org.thymeleaf.spring5.context.webflux.SpringWebFluxContext;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.thymeleaf.util.StringUtils;
+import org.springframework.web.bind.annotation.ResponseBody;
 
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.List;
 
 /**
  * @author panghu
@@ -30,19 +36,42 @@ public class GoodsController {
 
     private RedisService redisService;
 
+    private GoodsService goodsService;
 
-    @RequestMapping("to_list")
-    public String to_login(Model model, HttpServletResponse httpServletResponse,
-                           @CookieValue(value = UserService.COOKIE_NAME_TOKEN,required = false)String cookieToken,
-                           @RequestParam(value = UserService.COOKIE_NAME_TOKEN,required = false) String paramToken){
-            model.addAttribute("user",new User());
-            if (StringUtils.isEmpty(cookieToken) && StringUtils.isEmpty(paramToken)){
-                return "login";
-            }
-            String token = StringUtils.isEmpty(paramToken)?cookieToken:paramToken;
-            User user = userService.getByToken(httpServletResponse,token);
-            model.addAttribute("user",user);
-            return "goods_list";
+
+
+
+    @Autowired
+    public GoodsController(UserService userService, RedisService redisService,
+                           GoodsService goodsService) {
+        this.userService = userService;
+        this.redisService = redisService;
+    }
+
+    /**
+     * 商品列表页面
+     * QPS:433
+     * 1000 * 10
+     */
+    @RequestMapping(value = "/to_list", produces = "text/html")
+    @ResponseBody
+    public String list(Model model, User user) {
+
+        //取缓存
+        String html = redisService.get(GoodsKey.getGoodsList, "", String.class);
+        if (!org.springframework.util.StringUtils.isEmpty(html)) {
+            return html;
+        }
+        List<GoodsVo> goodsList = goodsService.listGoodsVo();
+        model.addAttribute("user", user);
+        model.addAttribute("goodsList", goodsList);
+
+
+        if (!StringUtils.isEmpty(html)) {
+            redisService.set(GoodsKey.getGoodsList, "", html);
+        }
+        //结果输出
+        return html;
     }
 
 }
