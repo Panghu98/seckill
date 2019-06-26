@@ -116,7 +116,9 @@ public class SeckillController implements InitializingBean {
         }
 
         for (GoodsVo goodsVo : goodsVoList){
-            redisService.decr()
+            redisService.set(GoodsKey.getGoodsStock,""+goodsVo.getId(),goodsVo.getStockCount());
+            //初始化商品都是没有处理过的
+
         }
     }
 }
