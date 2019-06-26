@@ -1,8 +1,10 @@
 package com.panghu.seckill.controller;
 
 import com.google.common.util.concurrent.RateLimiter;
+import com.panghu.seckill.bean.SeckillOrder;
 import com.panghu.seckill.bean.User;
 import com.panghu.seckill.rabbitmq.MQSender;
+import com.panghu.seckill.rabbitmq.SeckillMessage;
 import com.panghu.seckill.redis.GoodsKey;
 import com.panghu.seckill.redis.RedisService;
 import com.panghu.seckill.result.CodeMsg;
@@ -102,7 +104,26 @@ public class SeckillController implements InitializingBean {
         long stack = redisService.decr(GoodsKey.getGoodsStock,""+goodsId);
         if (stack < 0){
             afterPropertiesSet();
+            //这个减少 返回的是减少后的数量
+            long stock2 = redisService.decr(GoodsKey.getGoodsStock,""+goodsId);
+            if (stock2 < 0){
+                localOverMap.put(goodsId,true);
+                return Result.error(CodeMsg.SECKILL_OVER);
+            }
+
         }
+        //判断重复秒杀
+        SeckillOrder order = orderService.getOrderByUserIdGoodsId(user.getId(),goodsId);
+        if (order != null){
+            return Result.error(CodeMsg.REPEATE_SECKILL);
+        }
+        //入队
+        SeckillMessage message = new SeckillMessage();
+        message.setUser(user);
+        message.setGoodsId(goodsId);
+        mqSender.sendSeckillMessage(message);
+        //排队中
+        return Result.success(0);
 
 
     }
@@ -118,6 +139,7 @@ public class SeckillController implements InitializingBean {
         for (GoodsVo goodsVo : goodsVoList){
             redisService.set(GoodsKey.getGoodsStock,""+goodsVo.getId(),goodsVo.getStockCount());
             //初始化商品都是没有处理过的
+            localOverMap.put(goodsVo.getId(),false);
 
         }
     }
