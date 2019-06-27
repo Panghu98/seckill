@@ -31,6 +31,7 @@ public class SeckillService {
     }
 
     //减库存　和　生成订单需要同步进行
+
     @Transactional
     public OrderInfo seckill(User user, GoodsVo goods){
 
@@ -65,6 +66,7 @@ public class SeckillService {
     }
 
     //在缓存中进行库存预减 ，设置为true，则库存秒杀完毕
+
     private void setGoodsOver(Long goodsId){
         redisService.set(SeckillKey.isGoodsOver,""+goodsId,true);
     }

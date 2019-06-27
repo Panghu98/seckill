@@ -17,10 +17,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -128,7 +125,8 @@ public class SeckillController implements InitializingBean {
 
     }
 
-    //通过继承 InitializingBean，重写afterPropertiesSet
+    //通过继承 InitializingBean，重写afterPropertiesSet   这样可以达到缓存预热的目的
+
     @Override
     public void afterPropertiesSet() throws Exception {
         List<GoodsVo> goodsVoList = goodsService.listGoodsVo();
@@ -142,5 +140,21 @@ public class SeckillController implements InitializingBean {
             localOverMap.put(goodsVo.getId(),false);
 
         }
+    }
+
+    /**
+     * @return orderID：成功   -1：秒杀失败，当缓存中没有商品的时候进行入队操作 0排队中
+     *
+     */
+    @GetMapping(value = "/result")
+    @ResponseBody
+    public Result<Long> seckillResult(Model model, User user,
+                                      @RequestParam("goodsId") long goodsId) {
+        model.addAttribute("user", user);
+        if (user == null) {
+            return Result.error(CodeMsg.SESSION_ERROR);
+        }
+        long orderId = seckillService.getSeckillResult(user.getId(), goodsId);
+        return Result.success(orderId);
     }
 }
