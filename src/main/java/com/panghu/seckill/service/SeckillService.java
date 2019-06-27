@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
  * @projectName seckill
  * @date 19-6-25 下午9:35
  */
-public class SeckillService {
+public class  SeckillService {
 
     private GoodsService goodsService;
 
@@ -49,6 +49,8 @@ public class SeckillService {
 
     /**
      * 获取秒杀的结果
+     *
+     * 成功：秒杀订单的ID  失败：-1  排队中：0
      * @return
      */
     public long getSeckillResult(long userId,long goodsId){

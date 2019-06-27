@@ -46,12 +46,13 @@ public class SeckillController implements InitializingBean {
     @Autowired
     public SeckillController(GoodsService goodsService, OrderService orderService,
                              SeckillService seckillService, RedisService redisService,
-                             MQSender mqSender) {
+                             MQSender mqSender, RateLimiter rateLimiter) {
         this.goodsService = goodsService;
         this.orderService = orderService;
         this.seckillService = seckillService;
         this.redisService = redisService;
         this.mqSender = mqSender;
+        this.rateLimiter = rateLimiter;
     }
 
     /**
@@ -97,18 +98,13 @@ public class SeckillController implements InitializingBean {
             return Result.error(CodeMsg.SECKILL_OVER);
         }
 
-        //预减库存
-        long stack = redisService.decr(GoodsKey.getGoodsStock,""+goodsId);
-        if (stack < 0){
-            afterPropertiesSet();
-            //这个减少 返回的是减少后的数量
-            long stock2 = redisService.decr(GoodsKey.getGoodsStock,""+goodsId);
-            if (stock2 < 0){
+        long stock = redisService.decr(GoodsKey.getGoodsStock,""+goodsId);
+        if (stock < 0){
+                //更改标记
                 localOverMap.put(goodsId,true);
                 return Result.error(CodeMsg.SECKILL_OVER);
-            }
+         }
 
-        }
         //判断重复秒杀
         SeckillOrder order = orderService.getOrderByUserIdGoodsId(user.getId(),goodsId);
         if (order != null){
@@ -136,7 +132,7 @@ public class SeckillController implements InitializingBean {
 
         for (GoodsVo goodsVo : goodsVoList){
             redisService.set(GoodsKey.getGoodsStock,""+goodsVo.getId(),goodsVo.getStockCount());
-            //初始化商品都是没有处理过的
+            //表示商品的秒杀未结束
             localOverMap.put(goodsVo.getId(),false);
 
         }
