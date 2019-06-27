@@ -53,7 +53,10 @@ public class GoodsService {
         do {
             numAttempts++;
             try {
+                //获取秒杀商品的版本号
                 sg.setVersion(goodsMapper.getVersionByGoodsId(goods.getId()));
+
+                //悲观锁  只能进行一次 其他的就会抛出异常
                 ret = goodsMapper.reduceStockByVersion(sg);
             } catch (Exception e) {
                 e.printStackTrace();

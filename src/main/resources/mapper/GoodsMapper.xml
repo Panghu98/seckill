@@ -10,7 +10,7 @@
         goods g on mg.id=g.id;
     </select>
     <select id="getGoodsVoByGoodsId" resultType="com.panghu.seckill.vo.GoodsVo">
-        select g.*, sg.stock_count, sg.start_date, sg.end_date, sg.seckill_price, sg.version  from sk_goods_seckill sg left join sk_goods g  on sg.goods_id = g.id where g.id = #{goodsId
+        select g.*, sg.stock_count, sg.start_date, sg.end_date, sg.seckill_price, sg.version  from sk_goods_seckill sg left join sk_goods g  on sg.goods_id = g.id where g.id = #{goodsId}
     </select>
     <select id="getVersionByGoodsId" resultType="java.lang.Integer">
         select version from sk_goods_seckill  where goods_id = #{goodsId}
